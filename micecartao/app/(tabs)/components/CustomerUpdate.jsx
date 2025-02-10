@@ -121,9 +121,12 @@ const CustomerUpdate = () => {
 
 const styles = StyleSheet.create({
   container: {
+    width: '50%',
     flex: 1,
-    justifyContent: "center",
+    margin: 'auto',
+    flexGrow: 1,
     padding: 20,
+    backgroundColor: '#fff',
   },
   heading: {
     fontSize: 24,

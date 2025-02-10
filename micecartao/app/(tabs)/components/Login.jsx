@@ -11,7 +11,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://192.168.1.7:5000/auth/login', { username, password });
+      const response = await axios.post('http://localhost:5000/auth/login', { username, password });
       if (response.status === 200) {
         await AsyncStorage.setItem('token', response.data.token);
         Alert.alert('Login bem-sucedido!');

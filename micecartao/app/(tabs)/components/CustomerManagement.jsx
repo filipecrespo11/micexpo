@@ -5,10 +5,14 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-native-date-picker';
+import { format } from 'date-fns';
+import "react-datepicker/dist/react-datepicker.css";
 
 let Signature;
+let WebDatePicker;
 if (Platform.OS === 'web') {
   Signature = require('react-signature-canvas').default;
+  WebDatePicker = require('react-datepicker').default;
 } else {
   Signature = require('react-native-signature-canvas').default;
 }
@@ -41,33 +45,17 @@ const CustomerManagement = () => {
     } else {
       signatureRef.current.clearSignature();
     }
-    setNewCustomer({ ...newCustomer, signature: "" });
   };
 
-  const handleSignature = () => {
-    if (Platform.OS === 'web') {
-      setNewCustomer({ ...newCustomer, signature: signatureRef.current.getTrimmedCanvas().toDataURL('image/png') });
-    } else {
-      signatureRef.current.readSignature();
-    }
-  };
-
-  const addCustomer = async () => {
-    if (!cpfValidator.isValid(newCustomer.cpf)) {
-      setErrorMessage("CPF inválido.");
-      return;
-    }
-
-    const customerData = { ...newCustomer };
-
+  const handleSubmit = async () => {
     try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await axios.post("http://192.168.1.7:5000/customers", customerData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (!cpfValidator.isValid(newCustomer.cpf)) {
+        setErrorMessage("CPF inválido");
+        return;
+      }
 
-      if (response.status === 201) {
-        Alert.alert("Cliente adicionado com sucesso!");
+      const response = await axios.post('https://your-api-endpoint.com/customers', newCustomer);
+      if (response.status === 200) {
         setNewCustomer({
           name: "",
           email: "",
@@ -81,6 +69,7 @@ const CustomerManagement = () => {
         });
         setErrorMessage("");
         handleClearSignature();
+        Alert.alert("Sucesso", "Cliente adicionado com sucesso");
       }
     } catch (error) {
       setErrorMessage("Erro ao adicionar cliente: " + error.message);
@@ -115,10 +104,55 @@ const CustomerManagement = () => {
         value={newCustomer.cpf}
         onChangeText={(value) => handleChange("cpf", value)}
       />
-      <Button title="Selecionar Data da Compra" onPress={() => setOpenPurchaseDatePicker(true)} />
-      <Text>Data da Compra: {newCustomer.purchaseDate.toLocaleDateString()}</Text>
-      <Button title="Selecionar Data de Devolução" onPress={() => setOpenReturnDatePicker(true)} />
-      <Text>Data de Devolução: {newCustomer.returnDate.toLocaleDateString()}</Text>
+      {Platform.OS === 'web' ? (
+        <>
+          <Text>Data de Compra</Text>
+          <WebDatePicker
+            selected={newCustomer.purchaseDate}
+            onChange={(date) => handleChange('purchaseDate', date)}
+            dateFormat="dd/MM/yyyy"
+          />
+          <Text>Data de Devolução</Text>
+          <WebDatePicker
+            selected={newCustomer.returnDate}
+            onChange={(date) => handleChange('returnDate', date)}
+            dateFormat="dd/MM/yyyy"
+          />
+        </>
+      ) : (
+        <>
+          <Button title="Selecionar Data de Compra" onPress={() => setOpenPurchaseDatePicker(true)} />
+          <Button title="Selecionar Data de Devolução" onPress={() => setOpenReturnDatePicker(true)} />
+          <DatePicker
+            modal
+            open={openPurchaseDatePicker}
+            date={newCustomer.purchaseDate}
+            onConfirm={(date) => {
+              setOpenPurchaseDatePicker(false);
+              handleChange('purchaseDate', date);
+            }}
+            onCancel={() => {
+              setOpenPurchaseDatePicker(false);
+            }}
+            mode="date"
+            locale="pt-BR"
+          />
+          <DatePicker
+            modal
+            open={openReturnDatePicker}
+            date={newCustomer.returnDate}
+            onConfirm={(date) => {
+              setOpenReturnDatePicker(false);
+              handleChange('returnDate', date);
+            }}
+            onCancel={() => {
+              setOpenReturnDatePicker(false);
+            }}
+            mode="date"
+            locale="pt-BR"
+          />
+        </>
+      )}
       <TextInput
         style={styles.input}
         placeholder="Senha"
@@ -132,78 +166,49 @@ const CustomerManagement = () => {
         value={newCustomer.observation}
         onChangeText={(value) => handleChange("observation", value)}
       />
-      <View style={styles.signatureContainer}>
-        <Signature
-          ref={signatureRef}
-          onEnd={handleSignature}
-          onClear={handleClearSignature}
-          descriptionText="Assine aqui"
-          clearText="Limpar"
-          confirmText="Salvar"
-          webStyle={`
-            .m-signature-pad--footer {
-              display: none;
-              margin: 0px;
-            }
-          `}
-        />
-      </View>
+      <Signature
+        ref={signatureRef}
+        onOK={(img) => handleChange("signature", img)}
+        onEmpty={() => setErrorMessage("Assinatura é obrigatória")}
+        descriptionText="Assine aqui"
+        clearText="Limpar"
+        confirmText="Salvar"
+        webStyle={`.m-signature-pad--footer { display: none; }`}
+      />
       <Button title="Limpar Assinatura" onPress={handleClearSignature} />
-      <Button title="Adicionar Cliente" onPress={addCustomer} />
+      <Button title="Adicionar Cliente" onPress={handleSubmit} />
       <Button title="Ver Lista de Clientes" onPress={() => navigation.navigate("CustomerList")} />
-      <DatePicker
-        modal
-        open={openPurchaseDatePicker}
-        date={newCustomer.purchaseDate}
-        onConfirm={(date) => {
-          setOpenPurchaseDatePicker(false);
-          handleChange("purchaseDate", date);
-        }}
-        onCancel={() => setOpenPurchaseDatePicker(false)}
-      />
-      <DatePicker
-        modal
-        open={openReturnDatePicker}
-        date={newCustomer.returnDate}
-        onConfirm={(date) => {
-          setOpenReturnDatePicker(false);
-          handleChange("returnDate", date);
-        }}
-        onCancel={() => setOpenReturnDatePicker(false)}
-      />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    width: '50%',
+    flex: 1,
+    margin: 'auto',
     flexGrow: 1,
-    justifyContent: "center",
     padding: 20,
+    backgroundColor: '#fff',
   },
   heading: {
     fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 20,
-    textAlign: "center",
   },
   input: {
     height: 40,
-    borderColor: "gray",
+    borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
-  signatureContainer: {
-    borderWidth: 1,
-    borderColor: "#000",
-    width: "100%",
-    height: 200,
-    marginBottom: 20,
+    marginBottom: 10,
+    paddingLeft: 8,
   },
   error: {
-    color: "red",
-    marginBottom: 20,
+    color: 'red',
+    marginBottom: 10,
   },
 });
 
 export default CustomerManagement;
+
+

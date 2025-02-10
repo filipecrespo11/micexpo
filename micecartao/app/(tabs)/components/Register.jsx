@@ -13,7 +13,7 @@ const Register = () => {
 
   const handleSubmit = async () => {
     try {
-      await axios.post("http://192.168.1.7:5000/auth/register", formData);
+      await axios.post("http://localhost:5000/auth/register", formData);
       Alert.alert("Usuário registrado com sucesso!");
       navigation.navigate("Login");
     } catch (error) {
