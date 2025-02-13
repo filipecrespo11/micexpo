@@ -54,7 +54,7 @@ const CustomerManagement = () => {
         return;
       }
 
-      const response = await axios.post('https://your-api-endpoint.com/customers', newCustomer);
+      const response = await axios.post('http://localhost:5000/customers', newCustomer);
       if (response.status === 200) {
         setNewCustomer({
           name: "",

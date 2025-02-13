@@ -24,7 +24,7 @@ const CustomerUpdate = () => {
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
-        const response = await axios.get(`http://192.168.1.7:5000/customers/${id}`, {
+        const response = await axios.get(`http://localhost:5000/customers/${id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setCustomer(response.data);
