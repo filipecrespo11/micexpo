@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, Platform } from "react-native";
+import { Text, TextInput, Button, StyleSheet, Alert, ScrollView, Platform } from "react-native";
 import { cpf as cpfValidator } from "cpf-cnpj-validator";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
@@ -54,7 +54,7 @@ const CustomerManagement = () => {
         return;
       }
 
-      const response = await axios.post('https://your-api-endpoint.com/customers', newCustomer);
+      const response = await axios.post('https://localhost:5000/customers', newCustomer);
       if (response.status === 200) {
         setNewCustomer({
           name: "",
@@ -73,6 +73,7 @@ const CustomerManagement = () => {
       }
     } catch (error) {
       setErrorMessage("Erro ao adicionar cliente: " + error.message);
+      console.log("Detalhes do erro:", error.response ? error.response.data : error.message);
     }
   };
 
@@ -184,9 +185,13 @@ const CustomerManagement = () => {
 
 const styles = StyleSheet.create({
   container: {
-    width: '50%',
+    marginTop: 16,
+    paddingVertical: 8,
+    borderWidth: 4,
+    borderColor: '#20232a',
+    borderRadius: 6,
     flex: 1,
-    margin: 'auto',
+    margin:"auto",
     flexGrow: 1,
     padding: 20,
     backgroundColor: '#fff',

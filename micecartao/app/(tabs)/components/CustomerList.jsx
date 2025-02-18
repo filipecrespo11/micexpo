@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert  } from "react-native";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 
@@ -13,13 +13,16 @@ const CustomerList = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/customers", {
+        const response = await axios.get("https://localhost:5000/customers", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setCustomers(response.data);
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
-      }
+        console.log("Detalhes do erro:", error.response ? error.response.data : error.message);    }
+      
+      
+      
     };
 
     fetchCustomers();

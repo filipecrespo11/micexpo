@@ -9,12 +9,12 @@ const router = express.Router();
 const formatCustomerDates = (customer) => {
   return {
     ...customer.toObject(),
-    purchaseDate: moment(customer.purchaseDate).format('YYYY-MM-DD'),
-    returnDate: moment(customer.returnDate).format('YYYY-MM-DD'),
+    purchaseDate: moment(customer.purchaseDate).format('DD-MM-YYYY'),
+    returnDate: moment(customer.returnDate).format('DD-MM-YYYY'),
     purchaseHistory: customer.purchaseHistory.map((history) => ({
       ...history,
-      purchaseDate: moment(history.purchaseDate).format('YYYY-MM-DD'),
-      returnDate: moment(history.returnDate).format('YYYY-MM-DD'),
+      purchaseDate: moment(history.purchaseDate).format('DD-MM-YYYY'),
+      returnDate: moment(history.returnDate).format('DD-MM-YYYY'),
     })),
   };
 };

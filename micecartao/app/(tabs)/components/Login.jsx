@@ -11,7 +11,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:5000/auth/login', { username, password });
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, { username, password });
       if (response.status === 200) {
         await AsyncStorage.setItem('token', response.data.token);
         Alert.alert('Login bem-sucedido!');
@@ -20,6 +20,7 @@ const Login = () => {
         Alert.alert('Login falhou. Verifique suas credenciais.');
       }
     } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Erro durante o login. Tente novamente mais tarde.');
     }
   };
@@ -38,11 +39,11 @@ const Login = () => {
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry={true}
       />
       <Button title="Login" onPress={handleLogin} />
       <Button title="Criar Conta" onPress={() => navigation.navigate('Register')} />
-      </View>
+    </View>
   );
 };
 
@@ -67,4 +68,3 @@ const styles = StyleSheet.create({
 });
 
 export default Login;
-
