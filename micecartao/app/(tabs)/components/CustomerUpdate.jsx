@@ -24,7 +24,7 @@ const CustomerUpdate = () => {
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/customers/${id}`, {
+        const response = await axios.get(`https://localhost:5000/customers/${id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setCustomer(response.data);
@@ -47,7 +47,7 @@ const CustomerUpdate = () => {
       : signatureRef.current.toDataURL();
 
     try {
-      await axios.put(`http://localhost:5000/customers/${id}`, {
+      await axios.put(`https://localhost:5000/customers/${id}`, {
         ...customer,
         signature: signatureImage,
       }, {

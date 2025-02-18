@@ -54,11 +54,7 @@ const CustomerManagement = () => {
         return;
       }
 
-<<<<<<< HEAD
       const response = await axios.post('https://localhost:5000/customers', newCustomer);
-=======
-      const response = await axios.post('http://localhost:5000/customers', newCustomer);
->>>>>>> eeed1c0e0e57c8fcdb73dd690ab0991673afb00f
       if (response.status === 200) {
         setNewCustomer({
           name: "",
