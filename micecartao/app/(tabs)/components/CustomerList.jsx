@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert  } from "react-native";
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
+import SignatureComponent from "./SignatureComponent"; // Componente de Assinatura
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
@@ -13,16 +14,14 @@ const CustomerList = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await axios.get("https://localhost:5000/customers", {
+        const response = await axios.get("http://192.168.1.6:5000/customers", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setCustomers(response.data);
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
-        console.log("Detalhes do erro:", error.response ? error.response.data : error.message);    }
-      
-      
-      
+        console.log("Detalhes do erro:", error.response ? error.response.data : error.message);
+      }
     };
 
     fetchCustomers();
@@ -89,6 +88,13 @@ const CustomerList = () => {
               ) : (
                 <Text>Assinatura: Não disponível</Text>
               )}
+
+              {/* Componente para capturar ou exibir a assinatura */}
+              <SignatureComponent 
+                signature={customer.signature} // Passa a assinatura já existente
+                customerId={customer._id} // Para associar a assinatura ao cliente
+              />
+
               <Button title={showHistory[customer._id] ? "Ocultar Histórico" : "Mostrar Histórico"} onPress={() => toggleShowHistory(customer._id)} />
               {showHistory[customer._id] && (
                 <View>

@@ -7,15 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-native-date-picker';
 import { format } from 'date-fns';
 import "react-datepicker/dist/react-datepicker.css";
+import SignatureComponent from "./SignatureComponent";
 
-let Signature;
-let WebDatePicker;
-if (Platform.OS === 'web') {
-  Signature = require('react-signature-canvas').default;
-  WebDatePicker = require('react-datepicker').default;
-} else {
-  Signature = require('react-native-signature-canvas').default;
-}
+
 
 const CustomerManagement = () => {
   const [newCustomer, setNewCustomer] = useState({
@@ -40,12 +34,15 @@ const CustomerManagement = () => {
   };
 
   const handleClearSignature = () => {
-    if (Platform.OS === 'web') {
-      signatureRef.current.clear();
-    } else {
-      signatureRef.current.clearSignature();
+    if (signatureRef.current) {
+      if (Platform.OS === 'web') {
+        signatureRef.current.clear(); // Para react-signature-canvas
+      } else {
+        signatureRef.current.clearSignature(); // Para react-native-signature-canvas
+      }
     }
   };
+  
 
   const handleSubmit = async () => {
     try {
@@ -54,7 +51,7 @@ const CustomerManagement = () => {
         return;
       }
 
-      const response = await axios.post('https://localhost:5000/customers', newCustomer);
+      const response = await axios.post('http://192.168.1.6:5000/customers', newCustomer);
       if (response.status === 200) {
         setNewCustomer({
           name: "",
@@ -167,15 +164,9 @@ const CustomerManagement = () => {
         value={newCustomer.observation}
         onChangeText={(value) => handleChange("observation", value)}
       />
-      <Signature
-        ref={signatureRef}
-        onOK={(img) => handleChange("signature", img)}
-        onEmpty={() => setErrorMessage("Assinatura é obrigatória")}
-        descriptionText="Assine aqui"
-        clearText="Limpar"
-        confirmText="Salvar"
-        webStyle={`.m-signature-pad--footer { display: none; }`}
-      />
+      
+     <SignatureComponent onSave={(img) => handleChange("signature", img)} />
+
       <Button title="Limpar Assinatura" onPress={handleClearSignature} />
       <Button title="Adicionar Cliente" onPress={handleSubmit} />
       <Button title="Ver Lista de Clientes" onPress={() => navigation.navigate("CustomerList")} />
