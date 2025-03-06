@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -11,17 +11,20 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, { username, password });
+      const response = await axios.post('http://172.16.76.255:5000/auth/login', { 
+        username, 
+        password 
+      });
       if (response.status === 200) {
-        await AsyncStorage.setItem('token', response.data.token);
+        await SecureStore.setItemAsync("token", response.data.token); // Ajuste conforme a resposta do backend
         Alert.alert('Login bem-sucedido!');
         navigation.navigate('CustomerManagement');
       } else {
         Alert.alert('Login falhou. Verifique suas credenciais.');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Erro durante o login. Tente novamente mais tarde.');
+      Alert.alert('Erro durante o login: ' + (error.response?.data?.message || error.message));
+      console.error(error.response?.data || error.message);
     }
   };
 
@@ -30,16 +33,16 @@ const Login = () => {
       <Text style={styles.heading}>Login</Text>
       <TextInput
         style={styles.input}
-        placeholder="Username"
+        placeholder="Digite seu nome de usuário"
         value={username}
         onChangeText={setUsername}
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Digite sua senha"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry={true}
+        secureTextEntry
       />
       <Button title="Login" onPress={handleLogin} />
       <Button title="Criar Conta" onPress={() => navigation.navigate('Register')} />

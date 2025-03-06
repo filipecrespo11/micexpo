@@ -1,44 +1,42 @@
 import React, { useRef } from "react";
-import { View, Button, Platform, StyleSheet, Alert } from "react-native";
-
-let Signature;
-if (Platform.OS === 'web') {
-  Signature = require('react-signature-canvas').default;
-} else {
-  Signature = require('react-native-signature-canvas').default;
-}
+import { View, Button, StyleSheet, Alert } from "react-native";
+import { WebView } from 'react-native-webview';
 
 const SignatureComponent = ({ onSave }) => {
   const signatureRef = useRef(null);
 
   const handleClearSignature = () => {
-    if (Platform.OS === 'web') {
-      signatureRef.current.clear();
-    } else {
-      signatureRef.current.clearSignature();
-    }
+    signatureRef.current.injectJavaScript(`signaturePad.clear(); true;`);
   };
 
   const handleSaveSignature = () => {
-    if (Platform.OS === 'web') {
-      const signatureData = signatureRef.current.getTrimmedCanvas().toDataURL("image/png");
-      onSave(signatureData);
-      Alert.alert("Assinatura Salva!", "Sua assinatura foi salva com sucesso.");
-    } else {
-      signatureRef.current.readSignature();
-    }
+    signatureRef.current.injectJavaScript(`
+      window.ReactNativeWebView.postMessage(signaturePad.toDataURL());
+      true;
+    `);
   };
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <body>
+      <canvas id="signature-pad" width="300" height="100" style="border: 1px solid black;"></canvas>
+      <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+      <script>
+        var canvas = document.getElementById('signature-pad');
+        var signaturePad = new SignaturePad(canvas);
+      </script>
+    </body>
+    </html>
+  `;
 
   return (
     <View style={styles.container}>
-      <Signature
+      <WebView
         ref={signatureRef}
-        onOK={(img) => onSave(img)}
-        onEmpty={() => Alert.alert("Erro", "Assinatura é obrigatória")}
-        descriptionText="Assine aqui"
-        clearText="Limpar"
-        confirmText="Salvar"
-        webStyle={`.m-signature-pad--footer { display: none; }`}
+        source={{ html: htmlContent }}
+        style={styles.signatureCanvas}
+        onMessage={(event) => onSave(event.nativeEvent.data)}
       />
       <Button title="Limpar Assinatura" onPress={handleClearSignature} />
       <Button title="Salvar Assinatura" onPress={handleSaveSignature} />
@@ -49,6 +47,11 @@ const SignatureComponent = ({ onSave }) => {
 const styles = StyleSheet.create({
   container: {
     marginVertical: 20,
+  },
+  signatureCanvas: {
+    width: 300,
+    height: 100,
+    marginBottom: 20,
   },
 });
 

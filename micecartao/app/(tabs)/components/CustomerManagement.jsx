@@ -1,15 +1,13 @@
 import React, { useState, useRef } from "react";
-import { Text, TextInput, Button, StyleSheet, Alert, ScrollView, Platform } from "react-native";
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from "react-native";
 import { cpf as cpfValidator } from "cpf-cnpj-validator";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import DatePicker from 'react-native-date-picker';
-import { format } from 'date-fns';
-import "react-datepicker/dist/react-datepicker.css";
-import SignatureComponent from "./SignatureComponent";
+import * as SecureStore from "expo-secure-store";
+import { WebView } from "react-native-webview";
 
-
+// URL do servidor (mude para o endereço real)
+const API_URL = "http://172.16.76.255:5000/customers";
 
 const CustomerManagement = () => {
   const [newCustomer, setNewCustomer] = useState({
@@ -17,15 +15,14 @@ const CustomerManagement = () => {
     email: "",
     phone: "",
     cpf: "",
-    purchaseDate: new Date(),
-    returnDate: new Date(),
+    purchaseDate: "",
+    delivery: false,
+    returnDate: "",
     password: "",
     observation: "",
     signature: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
-  const [openPurchaseDatePicker, setOpenPurchaseDatePicker] = useState(false);
-  const [openReturnDatePicker, setOpenReturnDatePicker] = useState(false);
   const signatureRef = useRef(null);
   const navigation = useNavigation();
 
@@ -35,176 +32,134 @@ const CustomerManagement = () => {
 
   const handleClearSignature = () => {
     if (signatureRef.current) {
-      if (Platform.OS === 'web') {
-        signatureRef.current.clear(); // Para react-signature-canvas
-      } else {
-        signatureRef.current.clearSignature(); // Para react-native-signature-canvas
-      }
+      setTimeout(() => {
+        signatureRef.current.injectJavaScript(`signaturePad.clear(); true;`);
+      }, 500);
+      setNewCustomer({ ...newCustomer, signature: "" });
+    } else {
+      Alert.alert("Erro", "O campo de assinatura não está pronto. Tente novamente.");
     }
   };
-  
 
-  const handleSubmit = async () => {
+  const handleSaveSignature = () => {
+    if (signatureRef.current) {
+      signatureRef.current.injectJavaScript(`
+        if (typeof signaturePad !== 'undefined' && signaturePad) {
+          const dataUrl = signaturePad.toDataURL();
+          window.ReactNativeWebView.postMessage(dataUrl);
+        } else {
+          window.ReactNativeWebView.postMessage('Erro: SignaturePad não inicializado');
+        }
+        true;
+      `);
+    } else {
+      Alert.alert("Erro", "O campo de assinatura não está pronto. Tente novamente.");
+    }
+  };
+
+  const addCustomer = async () => {
+    // Remover caracteres não numéricos do CPF antes da validação
+    const cleanedCpf = newCustomer.cpf.replace(/\D/g, "");
+
+    if (!cpfValidator.isValid(cleanedCpf)) {
+      setErrorMessage("CPF inválido.");
+      return;
+    }
+
+    const token = await SecureStore.getItemAsync("token");
+    const customerData = { ...newCustomer, cpf: cleanedCpf };
+
     try {
-      if (!cpfValidator.isValid(newCustomer.cpf)) {
-        setErrorMessage("CPF inválido");
-        return;
-      }
+      const response = await axios.post(API_URL, customerData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      const response = await axios.post('http://192.168.1.6:5000/customers', newCustomer);
-      if (response.status === 200) {
+      if (response.status === 201) {
+        Alert.alert("Cliente adicionado com sucesso!");
         setNewCustomer({
           name: "",
           email: "",
           phone: "",
           cpf: "",
-          purchaseDate: new Date(),
-          returnDate: new Date(),
+          purchaseDate: "",
+          delivery: false,
+          returnDate: "",
           password: "",
           observation: "",
           signature: "",
         });
         setErrorMessage("");
         handleClearSignature();
-        Alert.alert("Sucesso", "Cliente adicionado com sucesso");
       }
     } catch (error) {
-      setErrorMessage("Erro ao adicionar cliente: " + error.message);
-      console.log("Detalhes do erro:", error.response ? error.response.data : error.message);
+      console.error(error);
+      setErrorMessage("Erro ao adicionar cliente: " + (error.response?.data?.message || error.message));
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Gerenciamento de Clientes</Text>
-      {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
-      <TextInput
-        style={styles.input}
-        placeholder="Nome"
-        value={newCustomer.name}
-        onChangeText={(value) => handleChange("name", value)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={newCustomer.email}
-        onChangeText={(value) => handleChange("email", value)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Telefone"
-        value={newCustomer.phone}
-        onChangeText={(value) => handleChange("phone", value)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="CPF"
-        value={newCustomer.cpf}
-        onChangeText={(value) => handleChange("cpf", value)}
-      />
-      {Platform.OS === 'web' ? (
-        <>
-          <Text>Data de Compra</Text>
-          <WebDatePicker
-            selected={newCustomer.purchaseDate}
-            onChange={(date) => handleChange('purchaseDate', date)}
-            dateFormat="dd/MM/yyyy"
-          />
-          <Text>Data de Devolução</Text>
-          <WebDatePicker
-            selected={newCustomer.returnDate}
-            onChange={(date) => handleChange('returnDate', date)}
-            dateFormat="dd/MM/yyyy"
-          />
-        </>
-      ) : (
-        <>
-          <Button title="Selecionar Data de Compra" onPress={() => setOpenPurchaseDatePicker(true)} />
-          <Button title="Selecionar Data de Devolução" onPress={() => setOpenReturnDatePicker(true)} />
-          <DatePicker
-            modal
-            open={openPurchaseDatePicker}
-            date={newCustomer.purchaseDate}
-            onConfirm={(date) => {
-              setOpenPurchaseDatePicker(false);
-              handleChange('purchaseDate', date);
-            }}
-            onCancel={() => {
-              setOpenPurchaseDatePicker(false);
-            }}
-            mode="date"
-            locale="pt-BR"
-          />
-          <DatePicker
-            modal
-            open={openReturnDatePicker}
-            date={newCustomer.returnDate}
-            onConfirm={(date) => {
-              setOpenReturnDatePicker(false);
-              handleChange('returnDate', date);
-            }}
-            onCancel={() => {
-              setOpenReturnDatePicker(false);
-            }}
-            mode="date"
-            locale="pt-BR"
-          />
-        </>
-      )}
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        value={newCustomer.password}
-        onChangeText={(value) => handleChange("password", value)}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Observação"
-        value={newCustomer.observation}
-        onChangeText={(value) => handleChange("observation", value)}
-      />
-      
-     <SignatureComponent onSave={(img) => handleChange("signature", img)} />
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    </head>
+    <body>
+      <canvas id="signature-pad" width="300" height="100" style="border: 1px solid black;"></canvas>
+      <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+      <script>
+        var canvas = document.getElementById('signature-pad');
+        var signaturePad = new SignaturePad(canvas);
+      </script>
+    </body>
+    </html>
+  `;
 
-      <Button title="Limpar Assinatura" onPress={handleClearSignature} />
-      <Button title="Adicionar Cliente" onPress={handleSubmit} />
-      <Button title="Ver Lista de Clientes" onPress={() => navigation.navigate("CustomerList")} />
+  return (
+    <ScrollView style={styles.container}>
+      <View>
+        <Text style={styles.heading}>Gerenciamento de Clientes</Text>
+        {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
+        <TextInput style={styles.input} placeholder="Nome" value={newCustomer.name} onChangeText={(value) => handleChange("name", value)} />
+        <TextInput style={styles.input} placeholder="Email" value={newCustomer.email} onChangeText={(value) => handleChange("email", value)} />
+        <TextInput style={styles.input} placeholder="Telefone" value={newCustomer.phone} onChangeText={(value) => handleChange("phone", value)} />
+        <TextInput style={styles.input} placeholder="CPF" value={newCustomer.cpf} onChangeText={(value) => handleChange("cpf", value)} />
+        <TextInput style={styles.input} placeholder="Data da Compra" value={newCustomer.purchaseDate} onChangeText={(value) => handleChange("purchaseDate", value)} />
+        <TextInput style={styles.input} placeholder="Data de Devolução" value={newCustomer.returnDate} onChangeText={(value) => handleChange("returnDate", value)} />
+        <TextInput style={styles.input} placeholder="Senha" value={newCustomer.password} onChangeText={(value) => handleChange("password", value)} secureTextEntry />
+        <TextInput style={styles.input} placeholder="Observação" value={newCustomer.observation} onChangeText={(value) => handleChange("observation", value)} />
+
+        <View style={styles.signatureContainer}>
+          <Text style={styles.signatureLabel}>Assinatura:</Text>
+          <WebView ref={signatureRef} source={{ html: htmlContent }} style={styles.signatureCanvas}
+            onMessage={(event) => {
+              const message = event.nativeEvent.data;
+              if (message.startsWith("data:image/")) {
+                setNewCustomer({ ...newCustomer, signature: message });
+                Alert.alert("Sucesso", "Assinatura salva com sucesso!");
+              } else {
+                Alert.alert("Erro", message.replace("Erro: ", ""));
+              }
+            }}
+          />
+          <View style={styles.signatureButtons}>
+            <Button title="Limpar Assinatura" onPress={handleClearSignature} />
+            <Button title="Salvar Assinatura" onPress={handleSaveSignature} />
+          </View>
+        </View>
+        
+        <Button title="Adicionar Cliente" onPress={addCustomer} />
+        <Button title="Ver Lista de Clientes" onPress={() => navigation.navigate("CustomerList")} />
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: 16,
-    paddingVertical: 8,
-    borderWidth: 4,
-    borderColor: '#20232a',
-    borderRadius: 6,
-    flex: 1,
-    margin:"auto",
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 8,
-  },
-  error: {
-    color: 'red',
-    marginBottom: 10,
-  },
+  container: { padding: 20 },
+  heading: { fontSize: 24, marginBottom: 20, textAlign: "center" },
+  input: { height: 40, borderWidth: 1, marginBottom: 20, paddingHorizontal: 10 },
+  error: { color: "red", marginBottom: 20 },
+  signatureCanvas: { width: 300, height: 100, borderWidth: 1, borderColor: "#000" },
 });
 
 export default CustomerManagement;
-
-
