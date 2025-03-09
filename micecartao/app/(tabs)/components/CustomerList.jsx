@@ -3,7 +3,7 @@ import { View, Text, TextInput, Button, FlatList, Image, StyleSheet, ScrollView 
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import * as SecureStore from 'expo-secure-store';
-const API_URL = "http://172.16.76.255:5000/customers";
+const API_URL = "https://micelania-app.onrender.com/customers";
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,7 +51,8 @@ const CustomerList = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView style={styles.container} contentContainerStyle={{flexGrow: 1}}>
       <View>
         <Text style={styles.heading}>Lista de Clientes</Text>
         <Button title="Voltar ao Gerenciamento de Clientes" onPress={() => navigation.navigate("CustomerManagement")} />
@@ -122,6 +123,7 @@ const CustomerList = () => {
         )}
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 

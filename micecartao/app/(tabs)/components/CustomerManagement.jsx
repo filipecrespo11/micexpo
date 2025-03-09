@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from "react-native";
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, SafeAreaView, SafeAreaViewBase } from "react-native";
 import { cpf as cpfValidator } from "cpf-cnpj-validator";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import { WebView } from "react-native-webview";
 
 // URL do servidor (mude para o endereço real)
-const API_URL = "http://172.16.76.255:5000/customers";
+const API_URL = "https://micelania-app.onrender.com/customers";
 
 const CustomerManagement = () => {
   const [newCustomer, setNewCustomer] = useState({
@@ -115,8 +115,9 @@ const CustomerManagement = () => {
   `;
 
   return (
-    <ScrollView style={styles.container}>
-      <View>
+    <SafeAreaView style={{ flex: 1 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{flexGrow: 1}}>
+      <View style={{minHeight: 1000}}>
         <Text style={styles.heading}>Gerenciamento de Clientes</Text>
         {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
         <TextInput style={styles.input} placeholder="Nome" value={newCustomer.name} onChangeText={(value) => handleChange("name", value)} />
@@ -151,15 +152,17 @@ const CustomerManagement = () => {
         <Button title="Ver Lista de Clientes" onPress={() => navigation.navigate("CustomerList")} />
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: { padding: 40 },
   heading: { fontSize: 24, marginBottom: 20, textAlign: "center" },
   input: { height: 40, borderWidth: 1, marginBottom: 20, paddingHorizontal: 10 },
   error: { color: "red", marginBottom: 20 },
-  signatureCanvas: { width: 300, height: 100, borderWidth: 1, borderColor: "#000" },
+  signatureCanvas: { width: 400, height: 100, borderWidth: 1, borderColor: "#000" },
+  signatureButtons: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
 });
 
 export default CustomerManagement;

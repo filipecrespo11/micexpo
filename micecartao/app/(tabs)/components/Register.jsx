@@ -13,7 +13,7 @@ const Register = () => {
 
   const handleSubmit = async () => {
     try {
-      await axios.post("http://172.16.76.255:8081/auth/register", formData);
+      await axios.post("https://micelania-app.onrender.com/auth/register", formData);
       Alert.alert("Usuário registrado com sucesso!");
       navigation.navigate("Login");
     } catch (error) {

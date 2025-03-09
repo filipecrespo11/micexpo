@@ -4,7 +4,7 @@ import axios from "axios";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import * as SecureStore from 'expo-secure-store';
 import { WebView } from 'react-native-webview';
-const API_URL = "http://172.16.76.255:5000/customers";
+const API_URL = "https://micelania-app.onrender.com/customers";
 const CustomerUpdate = () => {
   const route = useRoute();
   const { id } = route.params;
@@ -113,7 +113,8 @@ const CustomerUpdate = () => {
   `;
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView style={styles.container} contentContainerStyle={{flexGrow: 1}}>
       <View>
         <Text style={styles.heading}>Atualizar Cliente</Text>
         {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
@@ -187,6 +188,7 @@ const CustomerUpdate = () => {
         <Button title="Atualizar Cliente" onPress={handleSubmit} />
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
