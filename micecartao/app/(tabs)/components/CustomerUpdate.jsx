@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from "react-native";
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, SafeAreaView } from "react-native";
 import axios from "axios";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import * as SecureStore from 'expo-secure-store';

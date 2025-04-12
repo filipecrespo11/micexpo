@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { WebView } from "react-native-webview";
+import SignatureComponent from "./SignatureComponent";
 
 // URL do servidor (mude para o endereço real)
 const API_URL = "https://micelania-app.onrender.com/customers";
@@ -97,22 +98,6 @@ const CustomerManagement = () => {
     }
   };
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    </head>
-    <body>
-      <canvas id="signature-pad" width="300" height="100" style="border: 1px solid black;"></canvas>
-      <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-      <script>
-        var canvas = document.getElementById('signature-pad');
-        var signaturePad = new SignaturePad(canvas);
-      </script>
-    </body>
-    </html>
-  `;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -128,25 +113,8 @@ const CustomerManagement = () => {
         <TextInput style={styles.input} placeholder="Data de Devolução" value={newCustomer.returnDate} onChangeText={(value) => handleChange("returnDate", value)} />
         <TextInput style={styles.input} placeholder="Senha" value={newCustomer.password} onChangeText={(value) => handleChange("password", value)} secureTextEntry />
         <TextInput style={styles.input} placeholder="Observação" value={newCustomer.observation} onChangeText={(value) => handleChange("observation", value)} />
-
-        <View style={styles.signatureContainer}>
-          <Text style={styles.signatureLabel}>Assinatura:</Text>
-          <WebView ref={signatureRef} source={{ html: htmlContent }} style={styles.signatureCanvas}
-            onMessage={(event) => {
-              const message = event.nativeEvent.data;
-              if (message.startsWith("data:image/")) {
-                setNewCustomer({ ...newCustomer, signature: message });
-                Alert.alert("Sucesso", "Assinatura salva com sucesso!");
-              } else {
-                Alert.alert("Erro", message.replace("Erro: ", ""));
-              }
-            }}
-          />
-          <View style={styles.signatureButtons}>
-            <Button title="Limpar Assinatura" onPress={handleClearSignature} />
-            <Button title="Salvar Assinatura" onPress={handleSaveSignature} />
-          </View>
-        </View>
+          
+        <SignatureComponent style={styles.signatureCanvas} /> 
         
         <Button title="Adicionar Cliente" onPress={addCustomer} />
         <Button title="Ver Lista de Clientes" onPress={() => navigation.navigate("CustomerList")} />
@@ -161,7 +129,6 @@ const styles = StyleSheet.create({
   heading: { fontSize: 24, marginBottom: 20, textAlign: "center" },
   input: { height: 40, borderWidth: 1, marginBottom: 20, paddingHorizontal: 10 },
   error: { color: "red", marginBottom: 20 },
-  signatureCanvas: { width: 400, height: 100, borderWidth: 1, borderColor: "#000" },
   signatureButtons: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
 });
 
